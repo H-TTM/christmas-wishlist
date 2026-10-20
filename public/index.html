@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Christmas Wishlist 🎄</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
+</head>
+<body>
+  <canvas id="snow-canvas"></canvas>
+
+  <div class="container">
+    <!-- Site Header -->
+    <header class="site-header">
+      <div class="top-bar">
+        <div class="countdown-pill" id="christmas-days">
+          🎅 Counting down to Christmas...
+        </div>
+        <div class="header-actions">
+          <button class="btn-pill" id="snow-toggle-btn" onclick="toggleSnow()">
+            ❄️ Snow: On
+          </button>
+          <button class="btn-pill" onclick="copyShareLink()">
+            📋 Share Link
+          </button>
+          <button class="btn-pill" id="admin-toggle-btn" onclick="handleAdminToggle()">
+            🔒 Parent Sign In
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-section">
+        <h1 class="hero-title" id="wishlist-title">Lily's Christmas Wishlist 🎄</h1>
+        <p class="hero-subtitle" id="wishlist-intro">
+          Welcome! Here are some gift ideas Lily would love this Christmas. If you buy or plan to buy something, tap "I'll Buy This" to reserve it so others don't get the same thing.
+        </p>
+        <div class="wishlist-stats" id="header-stats">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Parent Admin Banner (Visible when logged in) -->
+    <div id="admin-bar" class="admin-bar-active" style="display: none;">
+      <div>
+        👑 <strong>Parent Mode Active:</strong> You can see who bought each gift and edit items.
+      </div>
+      <div class="admin-bar-btns">
+        <button class="btn-admin-action" onclick="openAddItemModal()">
+          ➕ Add Gift Idea
+        </button>
+        <button class="btn-admin-action" onclick="openSettingsModal()">
+          ⚙️ Settings &amp; Checklist
+        </button>
+        <button class="btn-admin-action" onclick="handleAdminLogout()">
+          🚪 Sign Out
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <section class="controls-card">
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search gifts by name, description or brand...">
+        </div>
+      </div>
+
+      <div class="filter-pills" id="category-pills">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="status-toggle-row">
+        <span>Filter by availability:</span>
+        <div class="status-pills">
+          <button class="status-btn active" data-filter="all" onclick="setStatusFilter('all')">All Gifts</button>
+          <button class="status-btn" data-filter="available" onclick="setStatusFilter('available')">✨ Available Only</button>
+          <button class="status-btn" data-filter="claimed" onclick="setStatusFilter('claimed')">✅ Claimed</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gifts Grid -->
+    <main>
+      <div class="gifts-grid" id="gifts-grid">
+        <!-- Cards loaded via app.js -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>🎄 Wishing you a joyful and magical holiday season! 🎁</p>
+      <p style="margin-top: 6px; font-size: 0.8rem; color: #94a3b8;">
+        Items update in real-time so family &amp; friends never double up.
+      </p>
+    </footer>
+  </div>
+
+  <!-- CLAIM MODAL -->
+  <div class="modal-overlay" id="claim-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">🎁 Reserve this Gift</h3>
+        <button class="modal-close" onclick="closeModal('claim-modal')">&times;</button>
+      </div>
+      <form onsubmit="submitClaim(event)">
+        <div class="modal-body">
+          <div style="background: #f8fafc; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: 700; color: #1e293b; font-size: 1rem;" id="claim-item-title">Item Title</div>
+            <div style="color: #1a5632; font-weight: 700; font-size: 0.9rem;" id="claim-item-price">£0.00</div>
+          </div>
+
+          <div class="privacy-notice-box">
+            <span class="icon">🔒</span>
+            <div>
+              <strong>Privacy Guarantee:</strong> Only <span id="claim-parent-notice-name">the parent</span> will see your name so they can keep track of who bought what and thank you. Other family and guests will only see the item as <em>Claimed</em>.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="buyer-name-input">Your Name <span style="color: #c41e3a;">*</span></label>
+            <input type="text" id="buyer-name-input" placeholder="e.g. Auntie Sarah, Grandma, Uncle Dave" required>
+          </div>
+
+          <div class="form-group">
+            <label for="buyer-note-input">Optional Note for Parent</label>
+            <textarea id="buyer-note-input" rows="2" placeholder="e.g. Bought on Amazon, ordered size 8, or arriving Dec 20"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('claim-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Confirm Reservation 🎁</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PARENT LOGIN MODAL -->
+  <div class="modal-overlay" id="admin-login-modal">
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔒 Parent Sign In</h3>
+        <button class="modal-close" onclick="closeModal('admin-login-modal')">&times;</button>
+      </div>
+      <form onsubmit="submitAdminLogin(event)">
+        <div class="modal-body">
+          <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 16px;">
+            Enter your Parent Passcode/PIN to view purchaser names and edit the wishlist.
+          </p>
+          <div class="form-group">
+            <label for="admin-pin-input">Parent Passcode / PIN</label>
+            <input type="password" id="admin-pin-input" placeholder="Enter PIN" required autocomplete="current-password">
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px;">
+              Default PIN is: <code>santa2026</code> (you can change it anytime in settings)
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('admin-login-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Unlock Parent Mode 🔑</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT GIFT MODAL -->
+  <div class="modal-overlay" id="item-edit-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="item-modal-title">➕ Add Gift Idea</h3>
+        <button class="modal-close" onclick="closeModal('item-edit-modal')">&times;</button>
+      </div>
+      <form onsubmit="saveItem(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-title">Gift Title <span style="color: #c41e3a;">*</span></label>
+            <input type="text" id="edit-title" placeholder="e.g. LEGO Disney Princess Castle" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-category">Category</label>
+              <select id="edit-category">
+                <option value="Toys & Games">🧸 Toys &amp; Games</option>
+                <option value="Books">📚 Books</option>
+                <option value="Clothes">🧣 Clothes &amp; Shoes</option>
+                <option value="Arts & Crafts">🎨 Arts &amp; Crafts</option>
+                <option value="Tech & Gadgets">🎧 Tech &amp; Gadgets</option>
+                <option value="Stocking Fillers">🧦 Stocking Fillers</option>
+                <option value="General">🎁 General</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-priority">Priority</label>
+              <select id="edit-priority">
+                <option value="Normal">Normal</option>
+                <option value="High">🌟 High Priority</option>
+                <option value="Most Wanted">⭐ Most Wanted</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-price">Estimated Price</label>
+              <input type="text" id="edit-price" placeholder="e.g. £25.00 or £15 - £20">
+            </div>
+            <div class="form-group">
+              <label for="edit-url">Store / Shopping Link (Optional)</label>
+              <input type="url" id="edit-url" placeholder="https://amazon.co.uk/...">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-image">Image URL (Optional)</label>
+            <input type="url" id="edit-image" placeholder="https://example.com/photo.jpg">
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description &amp; Specific Details</label>
+            <textarea id="edit-description" rows="3" placeholder="Size, preferred colour, edition, or notes (e.g. Size 7-8, pink preferred)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('item-edit-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Save Gift 🎁</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PARENT SETTINGS & CHECKLIST MODAL -->
+  <div class="modal-overlay" id="admin-settings-modal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Parent Dashboard &amp; Thank-You Checklist</h3>
+        <button class="modal-close" onclick="closeModal('admin-settings-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Checklist Section -->
+        <div style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 style="font-size: 1.1rem; color: #1e293b;">📋 Who Bought What (Thank-You Checklist)</h4>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-card-admin" onclick="downloadCsv()">📥 Download CSV</button>
+              <button type="button" class="btn-card-admin" onclick="printChecklist()">🖨️ Print Checklist</button>
+            </div>
+          </div>
+          <div id="checklist-table-container" style="max-height: 240px; overflow-y: auto;">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+        <!-- Edit Wishlist Details Form -->
+        <form onsubmit="saveSettings(event)">
+          <h4 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 12px;">✏️ Wishlist Page Details</h4>
+
+          <div class="form-group">
+            <label for="setting-daughter-name">Daughter's Name</label>
+            <input type="text" id="setting-daughter-name" placeholder="e.g. Lily">
+          </div>
+
+          <div class="form-group">
+            <label for="setting-wishlist-title">Page Title</label>
+            <input type="text" id="setting-wishlist-title" placeholder="e.g. Lily's Christmas Wishlist 🎄">
+          </div>
+
+          <div class="form-group">
+            <label for="setting-intro-message">Intro Message for Family &amp; Friends</label>
+            <textarea id="setting-intro-message" rows="3"></textarea>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+          <h4 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 12px;">🔑 Change Parent Passcode / PIN</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="setting-current-pin">Current PIN</label>
+              <input type="password" id="setting-current-pin" placeholder="Enter current PIN">
+            </div>
+            <div class="form-group">
+              <label for="setting-new-pin">New PIN</label>
+              <input type="password" id="setting-new-pin" placeholder="Enter new PIN (min 4 chars)">
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding: 16px 0 0 0; background: none; border-top: none;">
+            <button type="button" class="btn-secondary" onclick="closeModal('admin-settings-modal')">Close</button>
+            <button type="submit" class="btn-primary">Save All Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

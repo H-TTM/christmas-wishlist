@@ -1,0 +1,16 @@
+{
+  "name": "christmas-wishlist",
+  "version": "1.0.0",
+  "description": "Christmas Gift Wishlist with real-time claiming and private buyer visibility for parents",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test_in_memory.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "keywords": ["christmas", "wishlist", "gift-registry"],
+  "author": "",
+  "license": "MIT"
+}
