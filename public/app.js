@@ -393,15 +393,26 @@ window.openClaimModal = function(itemId) {
   if (!item) return;
 
   state.activeClaimItemId = itemId;
-  document.getElementById('claim-item-title').textContent = item.title;
-  document.getElementById('claim-item-price').textContent = item.price ? `(${item.price})` : '';
-  document.getElementById('claim-daughter-name').textContent = state.settings.daughter_name || 'her';
-  document.getElementById('claim-parent-notice-name').textContent = state.settings.daughter_name || 'her';
-  document.getElementById('buyer-name-input').value = '';
-  document.getElementById('buyer-note-input').value = '';
+  const titleEl = document.getElementById('claim-item-title');
+  if (titleEl) titleEl.textContent = item.title;
+
+  const priceEl = document.getElementById('claim-item-price');
+  if (priceEl) priceEl.textContent = item.price ? `(${item.price})` : '';
+
+  const parentNoticeEl = document.getElementById('claim-parent-notice-name');
+  if (parentNoticeEl) {
+    const parentName = state.settings.daughter_name ? `${state.settings.daughter_name}'s parents` : 'the parent';
+    parentNoticeEl.textContent = parentName;
+  }
+
+  const nameInput = document.getElementById('buyer-name-input');
+  if (nameInput) nameInput.value = '';
+
+  const noteInput = document.getElementById('buyer-note-input');
+  if (noteInput) noteInput.value = '';
 
   openModal('claim-modal');
-  setTimeout(() => document.getElementById('buyer-name-input').focus(), 150);
+  if (nameInput) setTimeout(() => nameInput.focus(), 150);
 };
 
 window.submitClaim = async function(e) {
@@ -810,6 +821,23 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGiftCards();
     });
   }
+
+  // Close modals on background click or Escape key
+  document.addEventListener('click', (e) => {
+    if (e.target.classList && e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.active').forEach(m => {
+        m.classList.remove('active');
+      });
+      document.body.style.overflow = '';
+    }
+  });
 
   initSnowCanvas();
   loadWishlist();
